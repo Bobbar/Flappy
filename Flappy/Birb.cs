@@ -48,6 +48,8 @@ namespace Flappy
 			rect.Location = Position.Subtract(new D2DPoint(rect.Width * 0.5f, rect.Height * 0.5f));
 			gfx.DrawBitmap(_birbSprite, rect, srcRect, 1f, D2DBitmapInterpolationMode.NearestNeighbor);
 
+			//gfx.FillRectangle(rect, D2DColor.Blue);
+
 			gfx.PopTransform();
 		}
 

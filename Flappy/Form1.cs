@@ -24,18 +24,20 @@ namespace Flappy
 		private const float PIPE_VELO = -10f;//-8f;
 		private const int PIPE_FREQ_MS = 3000;
 		private const int PIPE_FREQ_VARIATION = 1000;
+		private const int FALL_ANIM_DELAY = 650;
+		private const float FLAP_VELO = -30f;
+
+		private long _lastFlapTime = 0;
 		private long _lastPipeTime = 0;
 		private long _nextPipeVariation = 0;
 		private int _score = 0;
 		private Font _scoreFont = new Font("Consolas", 30f);
 		private Birb _birb;
 		private D2DPoint _birbVelo = D2DPoint.Zero;
-		private Animation<float> _birbAnim; //= new RotationAnimation(testBirb, 0, 180, 3000 * 10000, EaseQuinticOut);
-
+		private Animation<float> _birbFallingAnim;
+		private FlapAnimation _birbFlapAnim;
 		private List<Pipe> _pipes = new List<Pipe>();
-
 		private Task _renderThread;
-
 		private Random _rnd = new Random(1234);
 
 		public Form1()
@@ -50,9 +52,7 @@ namespace Flappy
 			base.OnHandleCreated(e);
 
 			InitGfx();
-
-			_birb = new Birb(new D2DPoint(this.Width * 0.5f, this.Height * 0.5f), _birbSprite);
-			_birbAnim = new RotationAnimation(_birb, -45, 45, 1000 * 10000, EaseQuinticOut);
+			InitBirb();
 
 			_renderThread = new Task(RenderLoop, TaskCreationOptions.LongRunning);
 			_renderThread.Start();
@@ -74,7 +74,6 @@ namespace Flappy
 
 			_birbSprite?.Dispose();
 			_birbSprite = _device.CreateBitmapFromFile($@".\birb_sprite.png");
-			//_birb = new Birb(_birbSprite);
 
 			_device.Resize();
 
@@ -84,18 +83,31 @@ namespace Flappy
 			this.Invalidate();
 		}
 
+		private void InitBirb()
+		{
+			_birb = new Birb(new D2DPoint(this.Width * 0.5f, this.Height * 0.5f), _birbSprite);
+			_birbFlapAnim = new FlapAnimation(_birb, 0, -45, 300 * 10000, EaseQuinticOut);
+			_birbFallingAnim = new FallingAnimation(_birb, 0, 90, 500 * 10000, EaseQuinticOut);
+		}
+
 		private void RenderLoop()
 		{
 			while (!this.Disposing)
 			{
 				_gfx.BeginRender(_gameOver ? D2DColor.Red : D2DColor.White);
 
-				//_gfx.DrawBitmap(_birbSprite, new D2DRect(new D2DPoint(100, 100), new D2DSize(40, 40)), new D2DRect(new D2DPoint(592, 592), new D2DSize(634, 634)));
-				//_gfx.DrawRectangle(new D2DRect(new D2DPoint(100, 100), new D2DSize(40, 40)), D2DColor.Blue);
-
 				if (!_gameOver && !_paused)
 				{
-					_birbAnim.Step();
+					var elap = (DateTime.Now.Ticks - _lastFlapTime) / TimeSpan.TicksPerMillisecond;
+					if (elap > FALL_ANIM_DELAY)
+					{
+						_birbFallingAnim.Step();
+					}
+					else
+					{
+						_birbFlapAnim.Step();
+					}
+
 					_birbVelo.y += DT * GRAVITY;
 					_birb.Position = _birb.Position.Add(new D2DPoint(0, DT * _birbVelo.y));
 					_pipes.ForEach(p => p.Position = p.Position.Add(new D2DPoint(DT * PIPE_VELO, 0)));
@@ -169,6 +181,16 @@ namespace Flappy
 
 		}
 
+		private void DoFlap()
+		{
+			_paused = false;
+			//_birbAnim.Reverse();
+			_birbFlapAnim.Flap();
+			_birbVelo.y = FLAP_VELO;
+			_lastFlapTime = DateTime.Now.Ticks;
+
+		}
+
 		private void Reset()
 		{
 			_pipes.Clear();
@@ -178,8 +200,8 @@ namespace Flappy
 			_lastPipeTime = 0;
 			_score = 0;
 
-			_birb = new Birb(new D2DPoint(this.Width * 0.5f, this.Height * 0.5f), _birbSprite);
-			_birbAnim = new RotationAnimation(_birb, -45, 45, 1000 * 10000, EaseQuinticOut);
+			InitBirb();
+
 
 			_device?.Resize();
 		}
@@ -192,9 +214,7 @@ namespace Flappy
 
 		private void Form1_MouseDown(object sender, MouseEventArgs e)
 		{
-			_paused = false;
-			_birbAnim.Reverse();
-			_birbVelo.y = -30f;
+			DoFlap();
 
 			if (e.Button == MouseButtons.Right)
 				Reset();

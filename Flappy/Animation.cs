@@ -72,49 +72,38 @@ namespace Flappy
 					if (ReverseOnLoop)
 						_isReversed = !_isReversed;
 				}
+				else
+				{
+					IsPlaying = false;
+					Done();
+				}
 			}
 		}
 
-		//public void Reverse()
-		//{
-		//	//_isReversed = !_isReversed;
-		//	_startTicks = DateTime.Now.Ticks;
-		//	//_position = 0f;
+		public void Reset()
+		{
+			_startTicks = DateTime.Now.Ticks;
+		}
 
+		public virtual void Reverse()
+		{
+		
+		}
 
-		//	var st = _start;
-		//	_start = _end;
-		//	_end = st;
+		public virtual void DoStep(float factor)
+		{
 
-		//	Debug.WriteLine($"[Reverse]  Rev: {_isReversed}");
-		//}
+		}
 
-		public abstract void Reverse();
+		public virtual void Done()
+		{
 
-		public abstract void DoStep(float factor);
+		}
 
+		//public abstract void Reverse();
+
+		//public abstract void DoStep(float factor);
+
+		//public abstract void Done();
 	}
-
-
-
-	//public class Animation<PType, RType>
-	//{
-	//	private Func<PType, RType> _property;
-	//	private RType _start;
-	//	private RType _end;
-	//	private float _duration;
-
-	//	public Animation(Func<PType, RType> property, RType start, RType end, float duration)
-	//	{
-	//		_property = property;
-	//		_start = start;
-	//		_end = end;
-	//		_duration = duration;
-	//	}
-
-	//	public void Step(float dt)
-	//	{
-	//		//_property.Invoke(dt);
-	//	}
-	//}
 }
