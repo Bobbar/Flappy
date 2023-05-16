@@ -15,6 +15,19 @@ namespace Flappy
 		public bool Entered = false;
 		public bool Passed = false;
 
+		private D2DBitmap _sprite;
+		private D2DRect _srcRect;
+
+		private D2DRect _capRect = new D2DRect(0, 0, 51, 23);
+		private D2DRect _bodyRect = new D2DRect(0, 24, 51, 297);
+
+
+		public Pipe(D2DPoint position, D2DBitmap sprite) : base(position)
+		{
+			_sprite = sprite;
+			_srcRect = new D2DRect(0,0, _sprite.Width, _sprite.Height);
+		}
+
 		public Pipe(D2DPoint position) : base(position)
 		{
 		}
@@ -30,8 +43,23 @@ namespace Flappy
 			var topRect = GetTopRect();
 			var botRect = GetBotRect();
 
-			gfx.FillRectangle(topRect, D2DColor.DarkGreen);
-			gfx.FillRectangle(botRect, D2DColor.DarkGreen);
+			var botCapRect = new D2DRect(botRect.left, botRect.top, WIDTH, _capRect.Height);
+			var botBodyRect = new D2DRect(botRect.left, botRect.top, WIDTH, botRect.Height);
+			gfx.DrawBitmap(_sprite, botBodyRect, _bodyRect, 1f, D2DBitmapInterpolationMode.NearestNeighbor);
+			gfx.DrawBitmap(_sprite, botCapRect, _capRect, 1f, D2DBitmapInterpolationMode.NearestNeighbor);
+
+			var topBodyRect = new D2DRect(topRect.left, topRect.top, WIDTH, topRect.Height);
+			var topBodyCenter = new D2DPoint(topBodyRect.X + (topBodyRect.Width * 0.5f), topBodyRect.Y + (topBodyRect.Height * 0.5f));
+			gfx.RotateTransform(180, topBodyCenter);
+			gfx.DrawBitmap(_sprite, topBodyRect, _bodyRect, 1f, D2DBitmapInterpolationMode.NearestNeighbor);
+
+			gfx.PopTransform();
+			gfx.PushTransform();
+
+			var topCapRect = new D2DRect(topRect.left, topRect.top + (topRect.Height - _capRect.Height), WIDTH, _capRect.Height);
+			var topCenter = new D2DPoint(topCapRect.X + (topCapRect.Width * 0.5f), topCapRect.Y + (topCapRect.Height * 0.5f));
+			gfx.RotateTransform(180, topCenter);
+			gfx.DrawBitmap(_sprite, topCapRect, _capRect, 1f, D2DBitmapInterpolationMode.NearestNeighbor);
 
 			gfx.PopTransform();
 		}

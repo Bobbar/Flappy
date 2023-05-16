@@ -13,6 +13,7 @@ namespace Flappy
 		private D2DGraphics _gfx;
 		private D2DBitmap _birbSprite;
 		private D2DBitmap _skylineSprite;
+		private D2DBitmap _pipeSprite;
 
 		private WaitableTimer _loopTimer = new WaitableTimer();
 
@@ -92,6 +93,9 @@ namespace Flappy
 
 			_skylineSprite?.Dispose();
 			_skylineSprite = _device.CreateBitmapFromFile($@".\skyline.png");
+
+			_pipeSprite?.Dispose();
+			_pipeSprite = _device.CreateBitmapFromFile($@".\pipe-green.png");
 
 			_device.Resize();
 
@@ -217,7 +221,7 @@ namespace Flappy
 			if (elap / 10000 > PIPE_FREQ_MS + _nextPipeVariation || _lastPipeTime == 0)
 			{
 				_lastPipeTime = DateTime.Now.Ticks;
-				_pipes.Add(new Pipe(new D2DPoint(this.Width, _rnd.Next(PIPE_GAP_PADDING, this.Height - (PIPE_GAP_PADDING + 20)))));
+				_pipes.Add(new Pipe(new D2DPoint(this.Width, _rnd.Next(PIPE_GAP_PADDING, this.Height - (PIPE_GAP_PADDING + 20))), _pipeSprite));
 				_nextPipeVariation = _rnd.Next(-PIPE_FREQ_VARIATION, PIPE_FREQ_VARIATION);
 			}
 		}

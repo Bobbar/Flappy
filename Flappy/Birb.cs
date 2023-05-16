@@ -13,8 +13,6 @@ namespace Flappy
 		private D2DRect rect = new D2DRect(D2DPoint.Zero, new D2DSize(40, 40));
 		private D2DRect srcRect = new D2DRect(new D2DPoint(592, 592), new D2DSize(634, 634));
 
-		//private D2DRect srcRect = new D2DRect(new D2DPoint(256,286), new D2DSize(634, 634));
-
 		private D2DBitmap _birbSprite;
 
 		public Birb() : base()

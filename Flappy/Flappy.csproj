@@ -19,6 +19,9 @@
     <None Update="birb_sprite.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="pipe-green.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="skyline.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
