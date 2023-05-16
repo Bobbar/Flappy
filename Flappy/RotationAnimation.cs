@@ -13,13 +13,22 @@ namespace Flappy
 
 		public override void DoStep(float factor)
 		{
-			
 			var newRot = _start + (_end - _start) * factor;
 			_target.Rotation = newRot;
+		}
 
+		public override void Reverse()
+		{
+			_startTicks = DateTime.Now.Ticks;
 
-			//Debug.WriteLine($"Pos: {_position}  Ang: {newRot}  Rev: {_isReversed}");
+			_start = _target.Rotation;
 
+			_isReversed = !_isReversed;
+
+			if (_isReversed)
+				_end = _ogStart;
+			else
+				_end = _ogEnd;
 		}
 	}
 }

@@ -28,35 +28,24 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
-            this.d2dControl1 = new unvell.D2DLib.WinForm.D2DControl();
             this.SuspendLayout();
-            // 
-            // d2dControl1
-            // 
-            this.d2dControl1.BackgroundImage = null;
-            this.d2dControl1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.d2dControl1.Location = new System.Drawing.Point(0, 0);
-            this.d2dControl1.Name = "d2dControl1";
-            this.d2dControl1.ShowFPS = false;
-            this.d2dControl1.Size = new System.Drawing.Size(800, 450);
-            this.d2dControl1.TabIndex = 0;
-            this.d2dControl1.Text = "d2dControl1";
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Controls.Add(this.d2dControl1);
+            this.ClientSize = new System.Drawing.Size(949, 518);
             this.Name = "Form1";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Form1";
+            this.ResizeEnd += new System.EventHandler(this.Form1_ResizeEnd);
             this.Click += new System.EventHandler(this.Form1_Click);
+            this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Form1_MouseDown);
+            this.Resize += new System.EventHandler(this.Form1_Resize);
             this.ResumeLayout(false);
 
 		}
 
 		#endregion
-
-		private unvell.D2DLib.WinForm.D2DControl d2dControl1;
 	}
 }

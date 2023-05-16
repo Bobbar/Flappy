@@ -12,4 +12,13 @@
     <PackageReference Include="unvell.D2DLib-x64" Version="1.4.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="birb_sprite.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="birb_sprite.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

@@ -7,14 +7,6 @@ using unvell.D2DLib;
 
 namespace Flappy
 {
-	//internal interface Renderable
-	//{
-	//	D2DPoint Position { get; set; }
-	//	float Rotation { get; set; }
-
-	//	void Render(D2DGraphics gfx);
-	//}
-
 	public abstract class Renderable
 	{
 		public D2DPoint Position { get; set; }
@@ -23,5 +15,17 @@ namespace Flappy
 
 		public abstract void Render(D2DGraphics gfx);
 
+		public Renderable() { }
+
+		public Renderable(D2DPoint position, float rotation)
+		{
+			Position = position;
+			Rotation = rotation;
+		}
+
+		public Renderable(D2DPoint position)
+		{
+			Position = position;
+		}
 	}
 }

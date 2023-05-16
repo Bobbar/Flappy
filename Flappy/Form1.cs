@@ -1,3 +1,4 @@
+using System.Configuration;
 using System.Diagnostics;
 using System.Windows.Forms;
 using unvell.D2DLib;
@@ -10,62 +11,52 @@ namespace Flappy
 	{
 		private D2DDevice _device;
 		private D2DGraphics _gfx;
+		private D2DBitmap _birbSprite;
 		private WaitableTimer _loopTimer = new WaitableTimer();
 
-		private const long _targetFPS = 60;
-		private long _targetWaitTime = TimeSpan.TicksPerSecond / _targetFPS;
+		private bool _gameOver = false;
+		private bool _paused = true;
+		private const long TARGET_FPS = 60;
+		private long _targetWaitTime = TimeSpan.TicksPerSecond / TARGET_FPS;
 
+		private const float GRAVITY = 9.8f;
+		private const float DT = 0.2f; //0.3f;
+		private const float PIPE_VELO = -10f;//-8f;
+		private const int PIPE_FREQ_MS = 3000;
+		private const int PIPE_FREQ_VARIATION = 1000;
+		private long _lastPipeTime = 0;
+		private long _nextPipeVariation = 0;
+		private int _score = 0;
+		private Font _scoreFont = new Font("Consolas", 30f);
+		private Birb _birb;
+		private D2DPoint _birbVelo = D2DPoint.Zero;
+		private Animation<float> _birbAnim; //= new RotationAnimation(testBirb, 0, 180, 3000 * 10000, EaseQuinticOut);
 
-		private Birb testBirb = new Birb();
-		private Animation<float> testAnim; //= new RotationAnimation(testBirb, 0, 180, 3000 * 10000, EaseQuinticOut);
+		private List<Pipe> _pipes = new List<Pipe>();
 
 		private Task _renderThread;
 
-		private bool _mouseClick = false;
+		private Random _rnd = new Random(1234);
 
 		public Form1()
 		{
 			InitializeComponent();
 
-			//InitGfx();
-
-		
-
-
-			testBirb.Position = new D2DPoint(100, 100);
-			testAnim = new RotationAnimation(testBirb, 0, 90, 1000 * 10000, EaseQuinticOut);
-			//testAnim.Loop = true;
-			//testAnim.ReverseOnLoop = true;
-
-
-			_renderThread = new Task(RenderLoop);
-			_renderThread.Start();
-
-
-
-			//var anim = new Animation<Birb,float>(t => t.Rotation, 0f, 100f, 100f);
-
-
-			//var f = new Func<Birb, float>((b) => b.Rotation);
-			////f(test) += 100f;
-
-			//var n = f(test);
-			//n += 100f;
-			//f(test) = n;
-
+			this.DoubleBuffered = false;
 		}
 
-		//protected override void CreateHandle()
-		//{
-		//	base.CreateHandle();
+		protected override void OnHandleCreated(EventArgs e)
+		{
+			base.OnHandleCreated(e);
 
-		//	this.DoubleBuffered = false;
+			InitGfx();
 
-		//	InitGfx();
+			_birb = new Birb(new D2DPoint(this.Width * 0.5f, this.Height * 0.5f), _birbSprite);
+			_birbAnim = new RotationAnimation(_birb, -45, 45, 1000 * 10000, EaseQuinticOut);
 
-		//	_renderThread = new Task(RenderLoop);
-		//	_renderThread.Start();
-		//}
+			_renderThread = new Task(RenderLoop, TaskCreationOptions.LongRunning);
+			_renderThread.Start();
+		}
 
 		private float EaseQuinticOut(float k)
 		{
@@ -74,31 +65,49 @@ namespace Flappy
 
 		private void InitGfx()
 		{
+			this.Refresh();
+			this.Invalidate();
+
 			_device?.Dispose();
 			_device = D2DDevice.FromHwnd(this.Handle);
-			_device.Resize();
 			_gfx = new D2DGraphics(_device);
+
+			_birbSprite?.Dispose();
+			_birbSprite = _device.CreateBitmapFromFile($@".\birb_sprite.png");
+			//_birb = new Birb(_birbSprite);
+
+			_device.Resize();
+
+			_gfx.ResetTransform();
+
+			this.Refresh();
+			this.Invalidate();
 		}
 
 		private void RenderLoop()
 		{
 			while (!this.Disposing)
 			{
-				_gfx.BeginRender(D2DColor.White);
+				_gfx.BeginRender(_gameOver ? D2DColor.Red : D2DColor.White);
 
-				
-				if (_mouseClick)
+				//_gfx.DrawBitmap(_birbSprite, new D2DRect(new D2DPoint(100, 100), new D2DSize(40, 40)), new D2DRect(new D2DPoint(592, 592), new D2DSize(634, 634)));
+				//_gfx.DrawRectangle(new D2DRect(new D2DPoint(100, 100), new D2DSize(40, 40)), D2DColor.Blue);
+
+				if (!_gameOver && !_paused)
 				{
-					testAnim.Reverse();
-					_mouseClick = false;
+					_birbAnim.Step();
+					_birbVelo.y += DT * GRAVITY;
+					_birb.Position = _birb.Position.Add(new D2DPoint(0, DT * _birbVelo.y));
+					_pipes.ForEach(p => p.Position = p.Position.Add(new D2DPoint(DT * PIPE_VELO, 0)));
+
+					DoCollisions();
+					SpawnPipes();
 				}
 
-				testAnim.Step();
+				_birb.Render(_gfx);
+				_pipes.ForEach(p => p.Render(_gfx));
 
-				testBirb.Position = testBirb.Position.Add(new D2DPoint(0.5f, 0f));
-
-				testBirb.Render(_gfx);
-
+				_gfx.DrawText($"{_score}", D2DColor.Black, _scoreFont, this.Width * 0.5f, 20f);
 
 				_gfx.EndRender();
 
@@ -106,16 +115,99 @@ namespace Flappy
 			}
 		}
 
+		private void DoCollisions()
+		{
+			if (_birb.Position.y >= this.Height)
+			{
+				_birb.Position = new D2DPoint(_birb.Position.x, this.Height);
+				_birbVelo = D2DPoint.Zero;
+				_gameOver = true;
+			}
+
+			var bounds = new D2DRect(0, 0, this.Width, this.Height);
+			for (int i = 0; i < _pipes.Count; i++)
+			{
+				var pipe = _pipes[i];
+				if (!bounds.Contains(pipe.Position))
+				{
+					_pipes.RemoveAt(i);
+				}
+				else
+				{
+					foreach (var rect in pipe.GetRects())
+					{
+						if (_birb.IsColliding(rect))
+							_gameOver = true;
+					}
+
+					if (!pipe.Entered && !pipe.Passed && _birb.IsColliding(pipe.GetGapRect()))
+					{
+						pipe.Entered = true;
+					}
+
+					if (pipe.Entered && !pipe.Passed && !_birb.IsColliding(pipe.GetGapRect()))
+					{
+						pipe.Passed = true;
+						_score++;
+					}
+				}
+			}
+		}
+
+		private void SpawnPipes()
+		{
+			var elap = DateTime.Now.Ticks - _lastPipeTime;
+
+			if (elap / 10000 > PIPE_FREQ_MS + _nextPipeVariation || _lastPipeTime == 0)
+			{
+				_lastPipeTime = DateTime.Now.Ticks;
+
+				_pipes.Add(new Pipe(new D2DPoint(this.Width, _rnd.Next(100, this.Height - 100))));
+
+				_nextPipeVariation = _rnd.Next(-PIPE_FREQ_VARIATION, PIPE_FREQ_VARIATION);
+			}
+
+		}
+
+		private void Reset()
+		{
+			_pipes.Clear();
+			_gameOver = false;
+			_paused = true;
+			_birb.Position = new D2DPoint(this.Width * 0.5f, this.Height * 0.5f);
+			_lastPipeTime = 0;
+			_score = 0;
+
+			_birb = new Birb(new D2DPoint(this.Width * 0.5f, this.Height * 0.5f), _birbSprite);
+			_birbAnim = new RotationAnimation(_birb, -45, 45, 1000 * 10000, EaseQuinticOut);
+
+			_device?.Resize();
+		}
+
 		private void Form1_Click(object sender, EventArgs e)
 		{
-			//if (_renderThread.Status != TaskStatus.Running)
-			//	_renderThread.Start();
+			if (_renderThread.Status != TaskStatus.Running)
+				_renderThread.Start();
+		}
 
-			//_device.Resize();
+		private void Form1_MouseDown(object sender, MouseEventArgs e)
+		{
+			_paused = false;
+			_birbAnim.Reverse();
+			_birbVelo.y = -30f;
 
-			//testAnim.Reverse();
-			Debug.WriteLine("Click!!!");
-			_mouseClick = true;
+			if (e.Button == MouseButtons.Right)
+				Reset();
+		}
+
+		private void Form1_ResizeEnd(object sender, EventArgs e)
+		{
+			_device?.Resize();
+		}
+
+		private void Form1_Resize(object sender, EventArgs e)
+		{
+			_device?.Resize();
 		}
 	}
 }

@@ -27,6 +27,11 @@ namespace Flappy
 
 		protected bool _isReversed = false;
 
+		protected T _ogStart;
+		protected T _ogEnd;
+
+		protected T _tempEnd;
+
 		protected Animation() { }
 
 		protected Animation(Renderable target, T start, T end, float duration, Func<float, float> easeFunc)
@@ -36,6 +41,9 @@ namespace Flappy
 			_end = end;
 			_duration = duration;
 			_easeFunc = easeFunc;
+
+			_ogStart = start;
+			_ogEnd = end;
 		}
 
 		public void Step()
@@ -49,23 +57,9 @@ namespace Flappy
 			var elap = DateTime.Now.Ticks - _startTicks;
 			_position = elap / _duration;
 
-			//var factor = _easeFunc(_position);
-
-			//Debug.WriteLine($"Pos: {_position}  Fac: {factor}  Rev: {_isReversed}");
-
-			//if (_isReversed)
-			//	factor = -factor;
-			
-
 			if (elap < _duration)
 			{
 				var factor = _easeFunc(_position);
-
-				Debug.WriteLine($"Pos: {_position}  Fac: {factor}  Rev: {_isReversed}");
-
-				if (_isReversed)
-					factor = -factor;
-
 				DoStep(factor);
 			}
 			else
@@ -81,14 +75,21 @@ namespace Flappy
 			}
 		}
 
-		public void Reverse()
-		{
-			_isReversed = !_isReversed;
-			_startTicks = DateTime.Now.Ticks;
-			_position = 0f;
+		//public void Reverse()
+		//{
+		//	//_isReversed = !_isReversed;
+		//	_startTicks = DateTime.Now.Ticks;
+		//	//_position = 0f;
 
-			Debug.WriteLine($"[Reverse]  Rev: {_isReversed}");
-		}
+
+		//	var st = _start;
+		//	_start = _end;
+		//	_end = st;
+
+		//	Debug.WriteLine($"[Reverse]  Rev: {_isReversed}");
+		//}
+
+		public abstract void Reverse();
 
 		public abstract void DoStep(float factor);
 
