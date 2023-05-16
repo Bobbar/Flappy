@@ -13,6 +13,8 @@ namespace Flappy
 
 		public float Rotation { get; set; }
 
+		public float Opacity { get; set; } = 1.0f;
+
 		public abstract void Render(D2DGraphics gfx);
 
 		public Renderable() { }

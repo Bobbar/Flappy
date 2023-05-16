@@ -18,5 +18,12 @@ namespace Flappy
 			var newRot = start + (_end - start) * factor;
 			_target.Rotation = newRot;
 		}
+
+		public override void Done()
+		{
+			base.Done();
+
+			Reset();
+		}
 	}
 }

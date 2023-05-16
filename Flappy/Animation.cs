@@ -74,7 +74,7 @@ namespace Flappy
 				}
 				else
 				{
-					IsPlaying = false;
+					//IsPlaying = false;
 					Done();
 				}
 			}
