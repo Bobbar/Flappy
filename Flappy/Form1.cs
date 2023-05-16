@@ -28,7 +28,10 @@ namespace Flappy
 		private const float SKYLINE_PARALLAX_FACT = 0.5f;
 		private const int PIPE_FREQ_MS = 2500;
 		private const int PIPE_FREQ_VARIATION = 500;
-		private const int PIPE_GAP_PADDING = 100;
+		private const int PIPE_GAP_POS_PADDING = 100;
+		private const int PIPE_GAP_SIZE = 120;
+		private const int PIPE_WIDTH = 60;
+
 		private const int FALL_ANIM_DELAY = 650;
 		private const float FLAP_VELO = -30f;
 
@@ -111,10 +114,8 @@ namespace Flappy
 			_birbFlapAnim = new FlapAnimation(_birb, 0, -45, 300 * 10000, EaseQuinticOut);
 			_birbFallingAnim = new FallingAnimation(_birb, 0, 90, 500 * 10000, EaseQuinticOut);
 
-
-			_skyline = new Skyline(_skylineSprite, new D2DSize(this.Width, this.Height));
+			_skyline = new Skyline(_skylineSprite, new D2DSize(this.Width, this.Height - 20));
 			_skyline.Position = new D2DPoint(this.Width, 0);
-
 
 			_gameOverOverlay = new GameOverOverlay(new D2DSize(this.Width, this.Height));
 			_gameOverAnimation = new OpacityAnimation(_gameOverOverlay, 0f, 0.7f, 500 * 10000, EaseOutElastic);
@@ -155,9 +156,8 @@ namespace Flappy
 				}
 
 				_skyline.Render(_gfx);
-				_birb.Render(_gfx);
 				_pipes.ForEach(p => p.Render(_gfx));
-
+				_birb.Render(_gfx);
 
 				if (_gameOver)
 				{
@@ -165,7 +165,6 @@ namespace Flappy
 					_gameOverAnimation.Step();
 					_gameOverOverlay.Render(_gfx);
 				}
-
 
 				_gfx.DrawText($"{_score}", D2DColor.Black, _scoreFont, this.Width * 0.5f, 20f);
 
@@ -221,7 +220,8 @@ namespace Flappy
 			if (elap / 10000 > PIPE_FREQ_MS + _nextPipeVariation || _lastPipeTime == 0)
 			{
 				_lastPipeTime = DateTime.Now.Ticks;
-				_pipes.Add(new Pipe(new D2DPoint(this.Width, _rnd.Next(PIPE_GAP_PADDING, this.Height - (PIPE_GAP_PADDING + 20))), _pipeSprite));
+				_pipes.Add(new Pipe(new D2DPoint(this.Width, _rnd.Next(PIPE_GAP_POS_PADDING, this.Height - (PIPE_GAP_POS_PADDING + 20))), _pipeSprite, PIPE_GAP_SIZE, PIPE_WIDTH));
+
 				_nextPipeVariation = _rnd.Next(-PIPE_FREQ_VARIATION, PIPE_FREQ_VARIATION);
 			}
 		}
