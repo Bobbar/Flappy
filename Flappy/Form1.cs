@@ -92,7 +92,7 @@ namespace Flappy
 			_gfx = new D2DGraphics(_device);
 
 			_birbSprite?.Dispose();
-			_birbSprite = _device.CreateBitmapFromFile($@".\birb_sprite.png");
+			_birbSprite = _device.CreateBitmapFromFile($@".\yellowbird-midflap.png");
 
 			_skylineSprite?.Dispose();
 			_skylineSprite = _device.CreateBitmapFromFile($@".\skyline.png");
@@ -138,6 +138,9 @@ namespace Flappy
 					{
 						_birbFlapAnim.Step();
 					}
+
+					//_birbVelo.y += DT * GRAVITY;
+					//_birb.Position = _birb.Position.Add(new D2DPoint(0, DT * _birbVelo.y));
 
 					_pipes.ForEach(p => p.Position = p.Position.Add(new D2DPoint(DT * PIPE_VELO, 0)));
 					_skyline.Position = _skyline.Position.Add(new D2DPoint(DT * (PIPE_VELO * SKYLINE_PARALLAX_FACT), 0));
