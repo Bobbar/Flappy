@@ -111,14 +111,14 @@ namespace Flappy
 		private void InitBirb()
 		{
 			_birb = new Birb(new D2DPoint(this.Width * 0.5f, this.Height * 0.5f), _birbSprite);
-			_birbFlapAnim = new FlapAnimation(_birb, 0, -45, 300 * 10000, EaseQuinticOut);
-			_birbFallingAnim = new FallingAnimation(_birb, 0, 90, 500 * 10000, EaseQuinticOut);
+			_birbFlapAnim = new FlapAnimation(_birb, 0, -45, 300, EaseQuinticOut);
+			_birbFallingAnim = new FallingAnimation(_birb, 0, 90, 700, EaseQuinticOut);
 
 			_skyline = new Skyline(_skylineSprite, new D2DSize(this.Width, this.Height - 20));
 			_skyline.Position = new D2DPoint(this.Width, 0);
 
 			_gameOverOverlay = new GameOverOverlay(new D2DSize(this.Width, this.Height));
-			_gameOverAnimation = new OpacityAnimation(_gameOverOverlay, 0f, 0.7f, 500 * 10000, EaseOutElastic);
+			_gameOverAnimation = new OpacityAnimation(_gameOverOverlay, 0f, 0.7f, 500, EaseOutElastic);
 		}
 
 		private void RenderLoop()

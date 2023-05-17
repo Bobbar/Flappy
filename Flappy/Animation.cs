@@ -54,7 +54,10 @@ namespace Flappy
 				_startTicks = DateTime.Now.Ticks;
 			}
 
-			var elap = DateTime.Now.Ticks - _startTicks;
+			//var elap = DateTime.Now.Ticks - _startTicks;
+			//_position = elap / _duration;
+
+			var elap = (DateTime.Now.Ticks - _startTicks) / TimeSpan.TicksPerMillisecond;
 			_position = elap / _duration;
 
 			if (elap < _duration)
