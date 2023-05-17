@@ -11,7 +11,7 @@ namespace Flappy
 	{
 		private D2DDevice _device;
 		private D2DGraphics _gfx;
-		private D2DBitmap _birbSprite;
+		private D2DBitmap[] _birbSprites = new D2DBitmap[3];
 		private D2DBitmap _skylineSprite;
 		private D2DBitmap _pipeSprite;
 
@@ -91,8 +91,14 @@ namespace Flappy
 			_device = D2DDevice.FromHwnd(this.Handle);
 			_gfx = new D2DGraphics(_device);
 
-			_birbSprite?.Dispose();
-			_birbSprite = _device.CreateBitmapFromFile($@".\yellowbird-midflap.png");
+			for (int i = 0; i < _birbSprites.Length; i++)
+			{
+				_birbSprites[i]?.Dispose();
+			}
+
+			_birbSprites[0] = _device.CreateBitmapFromFile($@".\yellowbird-downflap.png");
+			_birbSprites[1] = _device.CreateBitmapFromFile($@".\yellowbird-midflap.png");
+			_birbSprites[2] = _device.CreateBitmapFromFile($@".\yellowbird-upflap.png");
 
 			_skylineSprite?.Dispose();
 			_skylineSprite = _device.CreateBitmapFromFile($@".\skyline.png");
@@ -110,7 +116,8 @@ namespace Flappy
 
 		private void InitBirb()
 		{
-			_birb = new Birb(new D2DPoint(this.Width * 0.5f, this.Height * 0.5f), _birbSprite);
+			_birb = new Birb(new D2DPoint(this.Width * 0.5f, this.Height * 0.5f), _birbSprites);
+
 			_birbFlapAnim = new FlapAnimation(_birb, 0, -45, 300, EaseQuinticOut);
 			_birbFallingAnim = new FallingAnimation(_birb, 0, 90, 700, EaseQuinticOut);
 
@@ -169,7 +176,7 @@ namespace Flappy
 					_gameOverOverlay.Render(_gfx);
 				}
 
-				_gfx.DrawText($"{_score}", D2DColor.Black, _scoreFont, this.Width * 0.5f, 20f);
+				_gfx.DrawText($"{_score}", D2DColor.White, _scoreFont, this.Width * 0.5f, 20f);
 
 				_gfx.EndRender();
 
