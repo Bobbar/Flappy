@@ -31,7 +31,6 @@ namespace Flappy
 		private const int PIPE_GAP_POS_PADDING = 100;
 		private const int PIPE_GAP_SIZE = 120;
 		private const int PIPE_WIDTH = 60;
-
 		private const int FALL_ANIM_DELAY = 650;
 		private const float FLAP_VELO = -30f;
 
@@ -118,8 +117,8 @@ namespace Flappy
 		{
 			_birb = new Birb(new D2DPoint(this.Width * 0.5f, this.Height * 0.5f), _birbSprites);
 
-			_birbFlapAnim = new FlapAnimation(_birb, 0, -45, 300, EaseQuinticOut);
-			_birbFallingAnim = new FallingAnimation(_birb, 0, 90, 700, EaseQuinticOut);
+			_birbFlapAnim = new FlapAnimation(_birb, 0, -45, 400, EaseQuinticOut);
+			_birbFallingAnim = new FallingAnimation(_birb, 0, 90, 1000, EaseQuinticOut);
 
 			_skyline = new Skyline(_skylineSprite, new D2DSize(this.Width, this.Height - 20));
 			_skyline.Position = new D2DPoint(this.Width, 0);
