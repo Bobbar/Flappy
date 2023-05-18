@@ -55,6 +55,8 @@ namespace Flappy
 		{
 			InitializeComponent();
 
+			this.MouseWheel += Form1_MouseWheel;
+
 			this.DoubleBuffered = false;
 		}
 
@@ -273,6 +275,11 @@ namespace Flappy
 
 			if (e.Button == MouseButtons.Right)
 				Reset();
+		}
+
+		private void Form1_MouseWheel(object? sender, MouseEventArgs e)
+		{
+			DoFlap();
 		}
 
 		private void Form1_ResizeEnd(object sender, EventArgs e)
