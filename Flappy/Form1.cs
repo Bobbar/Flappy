@@ -1,13 +1,15 @@
 using System.Configuration;
 using System.Diagnostics;
 using System.Windows.Forms;
+using Flappy.Animations;
+using Flappy.Renderables;
 using unvell.D2DLib;
 using unvell.D2DLib.WinForm;
 
 
 namespace Flappy
 {
-	public partial class Form1 : Form
+    public partial class Form1 : Form
 	{
 		private D2DDevice _device;
 		private D2DGraphics _gfx;
@@ -97,15 +99,15 @@ namespace Flappy
 				_birbSprites[i]?.Dispose();
 			}
 
-			_birbSprites[0] = _device.CreateBitmapFromFile($@".\yellowbird-downflap.png");
-			_birbSprites[1] = _device.CreateBitmapFromFile($@".\yellowbird-midflap.png");
-			_birbSprites[2] = _device.CreateBitmapFromFile($@".\yellowbird-upflap.png");
+			_birbSprites[0] = _device.CreateBitmapFromFile($@".\Sprites\yellowbird-downflap.png");
+			_birbSprites[1] = _device.CreateBitmapFromFile($@".\Sprites\yellowbird-midflap.png");
+			_birbSprites[2] = _device.CreateBitmapFromFile($@".\Sprites\yellowbird-upflap.png");
 
 			_skylineSprite?.Dispose();
-			_skylineSprite = _device.CreateBitmapFromFile($@".\skyline.png");
+			_skylineSprite = _device.CreateBitmapFromFile($@".\Sprites\skyline.png");
 
 			_pipeSprite?.Dispose();
-			_pipeSprite = _device.CreateBitmapFromFile($@".\pipe-green.png");
+			_pipeSprite = _device.CreateBitmapFromFile($@".\Sprites\pipe-green.png");
 
 			_device.Resize();
 

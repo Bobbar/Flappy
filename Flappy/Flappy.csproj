@@ -16,19 +16,19 @@
     <None Update="birb_sprite.jpg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="pipe-green.png">
+    <None Update="Sprites\pipe-green.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="skyline.png">
+    <None Update="Sprites\skyline.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="yellowbird-downflap.png">
+    <None Update="Sprites\yellowbird-downflap.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="yellowbird-midflap.png">
+    <None Update="Sprites\yellowbird-midflap.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="yellowbird-upflap.png">
+    <None Update="Sprites\yellowbird-upflap.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
