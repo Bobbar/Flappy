@@ -19,6 +19,9 @@
     <None Update="Sprites\base.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Sprites\bloodsplats_0004.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Sprites\pipe-green.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

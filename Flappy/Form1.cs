@@ -9,7 +9,7 @@ using unvell.D2DLib.WinForm;
 
 namespace Flappy
 {
-    public partial class Form1 : Form
+	public partial class Form1 : Form
 	{
 		private D2DDevice _device;
 		private D2DGraphics _gfx;
@@ -17,6 +17,7 @@ namespace Flappy
 		private D2DBitmap _skylineSprite;
 		private D2DBitmap _pipeSprite;
 		private D2DBitmap _groundSprite;
+		private D2DBitmap _impactSprite;
 
 		private WaitableTimer _loopTimer = new WaitableTimer();
 
@@ -46,6 +47,7 @@ namespace Flappy
 		private Birb _birb;
 		private Skyline _skyline;
 		private Ground _ground;
+		private List<Impact> _impacts = new List<Impact>();
 		private GameOverOverlay _gameOverOverlay;
 		private D2DPoint _birbVelo = D2DPoint.Zero;
 		private Animation<float> _birbFallingAnim;
@@ -105,6 +107,9 @@ namespace Flappy
 
 			_skylineSprite?.Dispose();
 			_skylineSprite = _device.CreateBitmapFromFile($@".\Sprites\skyline.png");
+
+			_impactSprite?.Dispose();
+			_impactSprite = _device.CreateBitmapFromFile($@".\Sprites\bloodsplats_0004.png");
 
 			_groundSprite?.Dispose();
 			_groundSprite = _device.CreateBitmapFromFile($@".\Sprites\base.png");
@@ -169,6 +174,7 @@ namespace Flappy
 				_skyline.Render(_gfx);
 				_pipes.ForEach(p => p.Render(_gfx));
 				_ground.Render(_gfx);
+				_impacts.ForEach(i => i.Render(_gfx));
 				_birb.Render(_gfx);
 
 				if (_gameOver)
@@ -190,7 +196,8 @@ namespace Flappy
 		{
 			if (_birb.Position.y >= this.Height - GROUND_HEIGHT)
 			{
-				//_birb.Position = new D2DPoint(_birb.Position.x, this.Height);
+				_impacts.Add(new Impact(_birb.Position, new D2DRect(0, this.Height - GROUND_HEIGHT, this.Width, this.Height), _impactSprite));
+				_birb.Position = new D2DPoint(_birb.Position.x, this.Height - GROUND_HEIGHT);
 				_birbVelo = D2DPoint.Zero;
 				_gameOver = true;
 			}
@@ -199,7 +206,7 @@ namespace Flappy
 			for (int i = 0; i < _pipes.Count; i++)
 			{
 				var pipe = _pipes[i];
-				if (!bounds.Contains(pipe.Position.Add(new D2DPoint(50f,0))) && pipe.Position.x < (bounds.Width * 0.5f))
+				if (!bounds.Contains(pipe.Position.Add(new D2DPoint(50f, 0))) && pipe.Position.x < (bounds.Width * 0.5f))
 				{
 					_pipes.RemoveAt(i);
 				}
@@ -208,7 +215,10 @@ namespace Flappy
 					foreach (var rect in pipe.GetRects())
 					{
 						if (_birb.IsColliding(rect))
+						{
+							_impacts.Add(new Impact(_birb.Position, rect, _impactSprite));
 							_gameOver = true;
+						}
 					}
 
 					if (!pipe.Entered && !pipe.Passed && _birb.IsColliding(pipe.GetGapRect()))
@@ -257,6 +267,7 @@ namespace Flappy
 			_lastPipeTime = 0;
 			_score = 0;
 			_birbVelo.y = 0f;
+			_impacts.Clear();
 
 			InitGameObjects();
 
