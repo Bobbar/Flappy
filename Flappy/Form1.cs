@@ -16,6 +16,7 @@ namespace Flappy
 		private D2DBitmap[] _birbSprites = new D2DBitmap[3];
 		private D2DBitmap _skylineSprite;
 		private D2DBitmap _pipeSprite;
+		private D2DBitmap _groundSprite;
 
 		private WaitableTimer _loopTimer = new WaitableTimer();
 
@@ -26,13 +27,14 @@ namespace Flappy
 
 		private const float GRAVITY = 9.8f;
 		private const float DT = 0.2f;
-		private const float PIPE_VELO = -10f;//-8f;
+		private const float PIPE_VELO = -15f;//-8f;
 		private const float SKYLINE_PARALLAX_FACT = 0.5f;
 		private const int PIPE_FREQ_MS = 2500;
-		private const int PIPE_FREQ_VARIATION = 500;
+		private const int PIPE_FREQ_VARIATION = 700;//500;
 		private const int PIPE_GAP_POS_PADDING = 100;
-		private const int PIPE_GAP_SIZE = 120;
+		private const int PIPE_GAP_SIZE = 100;//120;
 		private const int PIPE_WIDTH = 60;
+		private const int GROUND_HEIGHT = 112;
 		private const int FALL_ANIM_DELAY = 650;
 		private const float FLAP_VELO = -30f;
 
@@ -43,6 +45,7 @@ namespace Flappy
 		private Font _scoreFont = new Font("Consolas", 30f);
 		private Birb _birb;
 		private Skyline _skyline;
+		private Ground _ground;
 		private GameOverOverlay _gameOverOverlay;
 		private D2DPoint _birbVelo = D2DPoint.Zero;
 		private Animation<float> _birbFallingAnim;
@@ -67,7 +70,7 @@ namespace Flappy
 			base.OnHandleCreated(e);
 
 			InitGfx();
-			InitBirb();
+			InitGameObjects();
 
 			_renderThread = new Task(RenderLoop, TaskCreationOptions.LongRunning);
 			_renderThread.Start();
@@ -87,9 +90,6 @@ namespace Flappy
 
 		private void InitGfx()
 		{
-			this.Refresh();
-			this.Invalidate();
-
 			_device?.Dispose();
 			_device = D2DDevice.FromHwnd(this.Handle);
 			_gfx = new D2DGraphics(_device);
@@ -106,18 +106,17 @@ namespace Flappy
 			_skylineSprite?.Dispose();
 			_skylineSprite = _device.CreateBitmapFromFile($@".\Sprites\skyline.png");
 
+			_groundSprite?.Dispose();
+			_groundSprite = _device.CreateBitmapFromFile($@".\Sprites\base.png");
+
 			_pipeSprite?.Dispose();
 			_pipeSprite = _device.CreateBitmapFromFile($@".\Sprites\pipe-green.png");
 
 			_device.Resize();
-
-			_gfx.ResetTransform();
-
-			this.Refresh();
-			this.Invalidate();
+			_gfx.Antialias = false;
 		}
 
-		private void InitBirb()
+		private void InitGameObjects()
 		{
 			_birb = new Birb(new D2DPoint(this.Width * 0.5f, this.Height * 0.5f), _birbSprites);
 
@@ -125,7 +124,8 @@ namespace Flappy
 			_birbFallingAnim = new FallingAnimation(_birb, 0, 90, 1000, EaseQuinticOut);
 
 			_skyline = new Skyline(_skylineSprite, new D2DSize(this.Width, this.Height - 20));
-			_skyline.Position = new D2DPoint(this.Width, 0);
+
+			_ground = new Ground(_groundSprite, new D2DSize(this.Width, this.Height), GROUND_HEIGHT);
 
 			_gameOverOverlay = new GameOverOverlay(new D2DSize(this.Width, this.Height));
 			_gameOverAnimation = new OpacityAnimation(_gameOverOverlay, 0f, 0.7f, 500, EaseOutElastic);
@@ -154,9 +154,7 @@ namespace Flappy
 
 					_pipes.ForEach(p => p.Position = p.Position.Add(new D2DPoint(DT * PIPE_VELO, 0)));
 					_skyline.Position = _skyline.Position.Add(new D2DPoint(DT * (PIPE_VELO * SKYLINE_PARALLAX_FACT), 0));
-
-					if (_skyline.Position.x <= 0f)
-						_skyline.Position = new D2DPoint(this.Width, 0);
+					_ground.Position = _ground.Position.Add(new D2DPoint(DT * PIPE_VELO, 0));
 
 					DoCollisions();
 					SpawnPipes();
@@ -170,6 +168,7 @@ namespace Flappy
 
 				_skyline.Render(_gfx);
 				_pipes.ForEach(p => p.Render(_gfx));
+				_ground.Render(_gfx);
 				_birb.Render(_gfx);
 
 				if (_gameOver)
@@ -189,9 +188,9 @@ namespace Flappy
 
 		private void DoCollisions()
 		{
-			if (_birb.Position.y >= this.Height)
+			if (_birb.Position.y >= this.Height - GROUND_HEIGHT)
 			{
-				_birb.Position = new D2DPoint(_birb.Position.x, this.Height);
+				//_birb.Position = new D2DPoint(_birb.Position.x, this.Height);
 				_birbVelo = D2DPoint.Zero;
 				_gameOver = true;
 			}
@@ -233,9 +232,8 @@ namespace Flappy
 			if (elap / 10000 > PIPE_FREQ_MS + _nextPipeVariation || _lastPipeTime == 0)
 			{
 				_lastPipeTime = DateTime.Now.Ticks;
-				_pipes.Add(new Pipe(new D2DPoint(this.Width, _rnd.Next(PIPE_GAP_POS_PADDING, this.Height - (PIPE_GAP_POS_PADDING + 20))), _pipeSprite, PIPE_GAP_SIZE, PIPE_WIDTH));
-
-				_nextPipeVariation = _rnd.Next(-PIPE_FREQ_VARIATION, PIPE_FREQ_VARIATION);
+				_pipes.Add(new Pipe(new D2DPoint(this.Width, _rnd.Next(PIPE_GAP_POS_PADDING, this.Height - (PIPE_GAP_POS_PADDING + GROUND_HEIGHT))), _pipeSprite, PIPE_GAP_SIZE, PIPE_WIDTH));
+				_nextPipeVariation = _rnd.Next(-PIPE_FREQ_VARIATION, 0);
 			}
 		}
 
@@ -260,7 +258,7 @@ namespace Flappy
 			_score = 0;
 			_birbVelo.y = 0f;
 
-			InitBirb();
+			InitGameObjects();
 
 			_device?.Resize();
 		}
