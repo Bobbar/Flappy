@@ -1,5 +1,6 @@
 using System.Configuration;
 using System.Diagnostics;
+using System.Drawing.Imaging;
 using System.Windows.Forms;
 using Flappy.Animations;
 using Flappy.Renderables;
@@ -19,22 +20,20 @@ namespace Flappy
 		private D2DBitmap _groundSprite;
 		private D2DBitmap _impactSprite;
 
-		private WaitableTimer _loopTimer = new WaitableTimer();
-
 		private bool _gameOver = false;
 		private bool _paused = true;
-		
+
 		private const long TARGET_FPS = 60;
 		private long _targetWaitTime = TimeSpan.TicksPerSecond / TARGET_FPS;
 
 		private const float GRAVITY = 9.8f;
 		private const float DT = 0.2f;
-		private const float BIRB_SPEED = -15f;//-8f;
+		private const float BIRB_SPEED = -15f;
 		private const float SKYLINE_PARALLAX_FACT = 0.5f;
 		private const int PIPE_SPACING = 400;
 		private const int PIPE_SPACING_VARIATION = 50;
 		private const int PIPE_GAP_POS_PADDING = 100;
-		private const int PIPE_GAP_SIZE = 100;//120;
+		private const int PIPE_GAP_SIZE = 100;
 		private const int PIPE_WIDTH = 60;
 		private const int GROUND_HEIGHT = 112;
 		private const int FALL_ANIM_DELAY = 650;
@@ -50,15 +49,17 @@ namespace Flappy
 		private Birb _birb;
 		private Skyline _skyline;
 		private Ground _ground;
+		private GifRenderer _impactGif;
 		private List<Impact> _impacts = new List<Impact>();
 		private GameOverOverlay _gameOverOverlay;
 		private D2DPoint _birbVelo = D2DPoint.Zero;
 		private Animation<float> _birbFallingAnim;
 		private FlapAnimation _birbFlapAnim;
 		private Animation<float> _gameOverAnimation;
-
 		private List<Pipe> _pipes = new List<Pipe>();
+
 		private Task _renderThread;
+		private WaitableTimer _loopTimer = new WaitableTimer();
 		private Random _rnd = new Random();
 
 		public Form1()
@@ -81,18 +82,6 @@ namespace Flappy
 
 			_renderThread = new Task(RenderLoop, TaskCreationOptions.LongRunning);
 			_renderThread.Start();
-		}
-
-		private float EaseQuinticOut(float k)
-		{
-			return 1f + ((k -= 1f) * (float)Math.Pow(k, 4));
-		}
-
-		private float EaseOutElastic(float k)
-		{
-			const float c4 = (2f * (float)Math.PI) / 3f;
-
-			return k == 0f ? 0f : k == 1f ? 1f : (float)Math.Pow(2f, -10f * k) * (float)Math.Sin((k * 10f - 0.75f) * c4) + 1f;
 		}
 
 		private void InitGfx()
@@ -130,15 +119,17 @@ namespace Flappy
 		{
 			_birb = new Birb(new D2DPoint(this.Width * 0.5f, this.Height * 0.5f), _birbSprites);
 
-			_birbFlapAnim = new FlapAnimation(_birb, 0, -45, 400, EaseQuinticOut);
-			_birbFallingAnim = new FallingAnimation(_birb, 0, 90, 1000, EaseQuinticOut);
+			_birbFlapAnim = new FlapAnimation(_birb, 0, -45, 400, EasingFunctions.EaseQuinticOut);
+			_birbFallingAnim = new FallingAnimation(_birb, 0, 90, 1000, EasingFunctions.EaseQuinticOut);
 
 			_skyline = new Skyline(_skylineSprite, new D2DSize(this.Width, this.Height - 20));
 
 			_ground = new Ground(_groundSprite, new D2DSize(this.Width, this.Height), GROUND_HEIGHT);
 
+			_impactGif = new GifRenderer(D2DPoint.Zero, Image.FromFile($@".\Sprites\splash.gif"), _gfx);
+
 			_gameOverOverlay = new GameOverOverlay(new D2DSize(this.Width, this.Height));
-			_gameOverAnimation = new OpacityAnimation(_gameOverOverlay, 0f, 0.7f, 500, EaseOutElastic);
+			_gameOverAnimation = new OpacityAnimation(_gameOverOverlay, 0f, 0.6f, 500, EasingFunctions.EaseOutElastic);
 		}
 
 		private void RenderLoop()
@@ -158,9 +149,6 @@ namespace Flappy
 					{
 						_birbFlapAnim.Step();
 					}
-
-					//_birbVelo.y += DT * GRAVITY;
-					//_birb.Position = _birb.Position.Add(new D2DPoint(0, DT * _birbVelo.y));
 
 					_pipes.ForEach(p => p.Position = p.Position.Add(new D2DPoint(DT * BIRB_SPEED, 0)));
 					_skyline.Position = _skyline.Position.Add(new D2DPoint(DT * (BIRB_SPEED * SKYLINE_PARALLAX_FACT), 0));
@@ -182,6 +170,7 @@ namespace Flappy
 				_ground.Render(_gfx);
 				_impacts.ForEach(i => i.Render(_gfx));
 				_birb.Render(_gfx);
+				_impactGif.Render(_gfx);
 
 				if (_gameOver)
 				{
@@ -192,19 +181,19 @@ namespace Flappy
 
 				_gfx.DrawText($"{_score}", D2DColor.White, _scoreFont, this.Width * 0.5f, 20f);
 
-				Debug.WriteLine(_distance);
-
 				_gfx.EndRender();
 
 				_loopTimer.Wait(_targetWaitTime, false);
 			}
 		}
 
+
 		private void DoCollisions()
 		{
 			if (_birb.Position.y >= this.Height - GROUND_HEIGHT)
 			{
 				_impacts.Add(new Impact(_birb.Position, new D2DRect(0, this.Height - GROUND_HEIGHT, this.Width, this.Height), _impactSprite));
+				_impactGif.Restart(_birb.Position);
 				_birb.Position = new D2DPoint(_birb.Position.x, this.Height - GROUND_HEIGHT);
 				_birbVelo = D2DPoint.Zero;
 				_gameOver = true;
@@ -225,6 +214,7 @@ namespace Flappy
 						if (_birb.IsColliding(rect))
 						{
 							_impacts.Add(new Impact(_birb.Position, rect, _impactSprite));
+							_impactGif.Restart(_birb.Position);
 							_gameOver = true;
 						}
 					}
@@ -242,7 +232,6 @@ namespace Flappy
 				}
 			}
 		}
-
 
 		private void SpawnPipes()
 		{

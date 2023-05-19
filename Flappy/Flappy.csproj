@@ -28,6 +28,12 @@
     <None Update="Sprites\skyline.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Sprites\splash.gif">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Sprites\splash_2.gif">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Sprites\yellowbird-downflap.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
