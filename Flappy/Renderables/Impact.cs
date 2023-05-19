@@ -18,6 +18,13 @@ namespace Flappy.Renderables
 		{
 			_sprite = sprite;
 			_clipRect = clipRect;
+
+			const int deflatePad = 2;
+			_clipRect.left += deflatePad;
+			_clipRect.right -= deflatePad;
+			_clipRect.top += deflatePad;
+			_clipRect.bottom -= deflatePad;
+
 			_srcRect = new D2DRect(0, 0, _sprite.Size.width, _sprite.Size.height);
 			_angle = new Random().Next(0, 360);
 		}
@@ -29,7 +36,7 @@ namespace Flappy.Renderables
 
 			gfx.RotateTransform(_angle, Position);
 
-			gfx.DrawBitmap(_sprite, new D2DRect(Position.x - (_sprite.Width * 0.5f), Position.y - (_sprite.Height * 0.5f), _srcRect.Width, _srcRect.Height), _srcRect, 1f, D2DBitmapInterpolationMode.NearestNeighbor);
+			gfx.DrawBitmap(_sprite, new D2DRect(Position.x - (_sprite.Width * 0.5f), Position.y - (_sprite.Height * 0.5f), _srcRect.Width, _srcRect.Height), _srcRect, 0.6f, D2DBitmapInterpolationMode.NearestNeighbor);
 
 			gfx.PopClip();
 			gfx.PopTransform();

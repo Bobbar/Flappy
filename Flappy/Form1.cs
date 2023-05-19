@@ -29,7 +29,7 @@ namespace Flappy
 		private const float GRAVITY = 9.8f;
 		private const float DT = 0.2f;
 		private const float BIRB_SPEED = -15f;
-		private const float SKYLINE_PARALLAX_FACT = 0.5f;
+		private const float SKYLINE_PARALLAX_FACT = 0.3f;
 		private const int PIPE_SPACING = 400;
 		private const int PIPE_SPACING_VARIATION = 50;
 		private const int PIPE_GAP_POS_PADDING = 100;
@@ -39,6 +39,7 @@ namespace Flappy
 		private const int FALL_ANIM_DELAY = 650;
 		private const float FLAP_VELO = -30f;
 		private const int RND_SEED = 4321;
+		private const bool FIXED_SEED = false;
 
 		private long _lastFlapTime = 0;
 		private long _lastPipeTime = 0;
@@ -119,7 +120,7 @@ namespace Flappy
 		{
 			_birb = new Birb(new D2DPoint(this.Width * 0.5f, this.Height * 0.5f), _birbSprites);
 
-			_birbFlapAnim = new FlapAnimation(_birb, 0, -45, 400, EasingFunctions.EaseQuinticOut);
+			_birbFlapAnim = new FlapAnimation(_birb, 0, -35, 400, EasingFunctions.EaseQuinticOut);
 			_birbFallingAnim = new FallingAnimation(_birb, 0, 90, 1000, EasingFunctions.EaseQuinticOut);
 
 			_skyline = new Skyline(_skylineSprite, new D2DSize(this.Width, this.Height - 20));
@@ -129,7 +130,7 @@ namespace Flappy
 			_impactGif = new GifRenderer(D2DPoint.Zero, Image.FromFile($@".\Sprites\splash.gif"), _gfx);
 
 			_gameOverOverlay = new GameOverOverlay(new D2DSize(this.Width, this.Height));
-			_gameOverAnimation = new OpacityAnimation(_gameOverOverlay, 0f, 0.6f, 500, EasingFunctions.EaseOutElastic);
+			_gameOverAnimation = new OpacityAnimation(_gameOverOverlay, 0.7f, 0.4f, 1000, EasingFunctions.EaseOutElastic);
 		}
 
 		private void RenderLoop()
@@ -261,14 +262,13 @@ namespace Flappy
 			_gameOver = false;
 			_paused = true;
 			_birb.Position = new D2DPoint(this.Width * 0.5f, this.Height * 0.5f);
+			_birb.Rotation = 0;
 			_lastPipeTime = 0;
 			_score = 0;
 			_birbVelo.y = 0f;
 			_impacts.Clear();
-			_rnd = new Random(RND_SEED);
+			_rnd = FIXED_SEED ? new Random(RND_SEED) : new Random();
 			_distance = 0;
-
-			InitGameObjects();
 
 			_device?.Resize();
 		}
