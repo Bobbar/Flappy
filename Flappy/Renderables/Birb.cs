@@ -11,23 +11,20 @@ namespace Flappy.Renderables
 {
     internal class Birb : Renderable
     {
-        private const int _sizeX = 40;
-        private const int _sizeY = 30;
-        private D2DSize _size = new D2DSize(_sizeX, _sizeY);
-        private D2DRect _destRect = new D2DRect(D2DPoint.Zero, new D2DSize(_sizeX, _sizeY));
+		private D2DRect _destRect;
         private D2DRect _srcRect = new D2DRect(0, 0, 34, 24);
-
         private const int MS_PER_LOOP = 550;
         private long _lastFrameTicks = 0;
-
+		private const float COL_RADIUS = 20f;
         private D2DBitmap[] _sprites;
 
-        public Birb(D2DPoint position, D2DBitmap[] sprites) : base(position)
+        public Birb(D2DPoint position, D2DBitmap[] sprites, Size renderSize) : base(position)
         {
             _sprites = sprites;
-        }
+			_destRect = new D2DRect(D2DPoint.Zero, new D2DSize(renderSize.Width, renderSize.Height));
+		}
 
-        public override void Render(D2DGraphics gfx)
+		public override void Render(D2DGraphics gfx)
         {
             gfx.PushTransform();
 
@@ -45,34 +42,32 @@ namespace Flappy.Renderables
                 _lastFrameTicks = DateTime.Now.Ticks;
 
             _destRect.Location = Position.Subtract(new D2DPoint(_destRect.Width * 0.5f, _destRect.Height * 0.5f));
-            gfx.DrawBitmap(_sprites[frame], _destRect, _srcRect, 1f, D2DBitmapInterpolationMode.NearestNeighbor);
+			gfx.DrawBitmap(_sprites[frame], _destRect, _srcRect, 1f, D2DBitmapInterpolationMode.NearestNeighbor);
 
-            //gfx.DrawRectangle(_destRect, D2DColor.Blue);
-            //gfx.FillEllipse(Position.Subtract(new D2DPoint(5f, 5f)), 10f, D2DColor.Red);
-
-            gfx.PopTransform();
+			gfx.PopTransform();
         }
 
-        public bool IsColliding(D2DRect rect)
-        {
-            bool isColliding = false;
+		public bool IsColliding(D2DRect rect)
+		{
+			var distX = Math.Abs(Position.x - (rect.X + (rect.Width * 0.5f)));
+			var distY = Math.Abs(Position.y - (rect.Y + (rect.Height * 0.5f)));
 
-            var r = new D2DRect(Position, _size);
+			if (distX > (rect.Width * 0.5f + COL_RADIUS))
+				return false;
 
-            if (rect.Contains(new D2DPoint(r.left, r.top)))
-                isColliding = true;
+			if (distY > (rect.Height * 0.5f + COL_RADIUS))
+				return false;
 
-            if (rect.Contains(new D2DPoint(r.right, r.top)))
-                isColliding = true;
+			if (distX <= (rect.Width * 0.5f))
+				return true;
 
-            if (rect.Contains(new D2DPoint(r.left, r.bottom)))
-                isColliding = true;
+			if (distY <= (rect.Height * 0.5f))
+				return true;
 
-            if (rect.Contains(new D2DPoint(r.right, r.bottom)))
-                isColliding = true;
+			var cornerDisSq = Math.Pow(distX - rect.Width * 0.5f, 2f) + Math.Pow(distY - rect.Height * 0.5f, 2f);
 
-            return isColliding;
-        }
+			return cornerDisSq <= Math.Pow(COL_RADIUS, 2f);
+		}
 
-    }
+	}
 }
