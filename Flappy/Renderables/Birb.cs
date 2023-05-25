@@ -15,7 +15,7 @@ namespace Flappy.Renderables
         private D2DRect _srcRect = new D2DRect(0, 0, 34, 24);
         private const int MS_PER_LOOP = 550;
         private long _lastFrameTicks = 0;
-		private const float COL_RADIUS = 20f;
+		private const float COL_RADIUS = 40f;
         private D2DBitmap[] _sprites;
 		private int _currentFrame = 0;
 

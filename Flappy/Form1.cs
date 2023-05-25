@@ -1,13 +1,10 @@
-using System.ComponentModel.Design.Serialization;
-using System.Configuration;
-using System.Diagnostics;
-using System.Drawing.Imaging;
-using System.Windows.Forms;
 using Flappy.Animations;
 using Flappy.Renderables;
+using System.Diagnostics;
+using System.Drawing.Imaging;
+using System.Numerics;
 using unvell.D2DLib;
 using unvell.D2DLib.WinForm;
-
 
 namespace Flappy
 {
@@ -30,7 +27,7 @@ namespace Flappy
 		private const float GRAVITY = 9.8f;
 		private const float DT = 0.2f;
 		private const float BIRB_SPEED = -15f;
-		private readonly Size BIRB_SIZE = new Size(40, 28);
+		private readonly Size BIRB_RENDER_SIZE = new Size(40, 28);
 		private const float SKYLINE_PARALLAX_FACT = 0.3f;
 		private const int PIPE_SPACING = 400;
 		private const int PIPE_SPACING_VARIATION = 50;
@@ -51,9 +48,8 @@ namespace Flappy
 		private Font _scoreFont = new Font("Consolas", 30f);
 		private Birb _birb;
 		private Birb _deadBirb;
-		private Bitmap _birbCollisionMask = new Bitmap(40, 40);
-		private Graphics _birbColGfx;
-		private Image _birbMaskSrc;
+		private Vector2[] _birbCollisionMask;
+		private D2DSize _birbCollisionMaskSize;
 		private Skyline _skyline;
 		private Ground _ground;
 		private GifRenderer _impactGif;
@@ -121,12 +117,14 @@ namespace Flappy
 
 			_device.Resize();
 			_gfx.Antialias = false;
+
+			CreateCollisionMask(Bitmap.FromFile($@".\Sprites\yellowbird-midflap.png"));
 		}
 
 		private void InitGameObjects()
 		{
-			_birb = new Birb(new D2DPoint(this.Width * 0.5f, this.Height * 0.5f), _birbSprites, BIRB_SIZE);
-			_deadBirb = new Birb(new D2DPoint(this.Width * 0.5f, this.Height * 0.5f), _birbSprites, BIRB_SIZE);
+			_birb = new Birb(new D2DPoint(this.Width * 0.5f, this.Height * 0.5f), _birbSprites, BIRB_RENDER_SIZE);
+			_deadBirb = new Birb(new D2DPoint(this.Width * 0.5f, this.Height * 0.5f), _birbSprites, BIRB_RENDER_SIZE);
 			_deadBirb.Opacity = 0.5f;
 			_deadBirb.Animate = false;
 
@@ -168,7 +166,6 @@ namespace Flappy
 					_ground.Position = _ground.Position.Add(new D2DPoint(DT * BIRB_SPEED, 0));
 					_distance += -(long)(DT * BIRB_SPEED);
 
-					DoCollisions();
 					SpawnPipes();
 				}
 
@@ -176,6 +173,9 @@ namespace Flappy
 				{
 					_birbVelo.y += DT * GRAVITY;
 					_birb.Position = _birb.Position.Add(new D2DPoint(0, DT * _birbVelo.y));
+
+					if (!_gameOver)
+						DoCollisions();
 				}
 
 				_skyline.Render(_gfx);
@@ -195,6 +195,8 @@ namespace Flappy
 
 				_gfx.DrawText($"{_score}", D2DColor.White, _scoreFont, this.Width * 0.5f, 20f);
 
+				//DrawCollisionMask();
+
 				_gfx.EndRender();
 
 				_renderTimer.Stop();
@@ -203,83 +205,68 @@ namespace Flappy
 			}
 		}
 
-		private Bitmap GetCollisionMask()
+		private unsafe void CreateCollisionMask(Image src)
 		{
-			if (_birbColGfx == null)
+			var points = new List<Vector2>();
+			_birbCollisionMaskSize = new D2DSize(src.Width, src.Height);
+
+			using (var mask = new Bitmap((Image)src.Clone()))
 			{
-				_birbColGfx = Graphics.FromImage(_birbCollisionMask);
-				_birbMaskSrc = ToMask(Bitmap.FromFile($@".\Sprites\yellowbird-midflap.png"));
-			}
+				var data = mask.LockBits(new Rectangle(0, 0, src.Width, src.Height), ImageLockMode.ReadWrite, src.PixelFormat);
+				byte* pixels = (byte*)data.Scan0;
 
-			_birbColGfx.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighSpeed;
-			_birbColGfx.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
-			_birbColGfx.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceOver;
-			_birbColGfx.Clear(Color.Transparent);
-			_birbColGfx.ResetTransform();
-			_birbColGfx.TranslateTransform(-(BIRB_SIZE.Width / 2), -(BIRB_SIZE.Height / 2));
-			_birbColGfx.RotateTransform(_birb.Rotation);
-			_birbColGfx.TranslateTransform((_birbCollisionMask.Width / 2) + (BIRB_SIZE.Width / 2), (_birbCollisionMask.Height / 2) + (BIRB_SIZE.Height / 2), System.Drawing.Drawing2D.MatrixOrder.Append);
-			_birbColGfx.DrawImage(_birbMaskSrc, -(BIRB_SIZE.Width * 0.5f), -(BIRB_SIZE.Height * 0.5f), BIRB_SIZE.Width, BIRB_SIZE.Height);
-
-			return _birbCollisionMask;
-		}
-
-		private unsafe bool PerPixelCollision(Bitmap mask, D2DRect rect)
-		{
-			bool isColliding = false;
-			var data = mask.LockBits(new Rectangle(0, 0, mask.Width, mask.Height), ImageLockMode.ReadWrite, mask.PixelFormat);
-			byte* pixels = (byte*)data.Scan0;
-
-			for (int x = 0; x < mask.Width; x++)
-			{
-				for (int y = 0; y < mask.Height; y++)
+				for (int x = 0; x < src.Width; x++)
 				{
-					int pidx = (y * mask.Width + x) * 4;
-
-					if (pixels[pidx + 3] > 0)
+					for (int y = 0; y < src.Height; y++)
 					{
-						var offsetPoint = new PointF(x + (_birb.Position.x - (mask.Width * 0.5f)), y + (_birb.Position.y - (mask.Height * 0.5f)));
-						if (rect.Contains(offsetPoint))
+						int pidx = (y * src.Width + x) * 4;
+
+						if (pixels[pidx + 3] > 0)
 						{
-							isColliding = true;
-							break;
+							points.Add(new Vector2(x, y));
 						}
 					}
 				}
+
+				mask.UnlockBits(data);
 			}
 
-			mask.UnlockBits(data);
+			_birbCollisionMask = points.ToArray();
+		}
+
+		private unsafe bool PerPixelCollision(D2DRect rect)
+		{
+			bool isColliding = false;
+			var renderSzHalf = new Vector2(BIRB_RENDER_SIZE.Width * 0.5f, BIRB_RENDER_SIZE.Height * 0.5f);
+			var mat = Matrix3x2.CreateScale(new Vector2(BIRB_RENDER_SIZE.Width / _birbCollisionMaskSize.width, BIRB_RENDER_SIZE.Height / _birbCollisionMaskSize.height));
+			mat *= Matrix3x2.CreateRotation(_birb.Rotation * (float)(Math.PI / 180f), renderSzHalf);
+			mat *= Matrix3x2.CreateTranslation(new Vector2(_birb.Position.x - renderSzHalf.X, _birb.Position.y - renderSzHalf.Y));
+
+			foreach (var pnt in _birbCollisionMask)
+			{
+				var transPnt = Vector2.Transform(pnt, mat);
+				if (rect.Contains(new D2DPoint(transPnt.X, transPnt.Y)))
+				{
+					isColliding = true;
+					break;
+				}
+			}
 
 			return isColliding;
 		}
 
-		private unsafe Image ToMask(Image src)
+		private void DrawCollisionMask()
 		{
-			var mask = new Bitmap((Image)src.Clone());
+			var renderSzHalf = new Vector2(BIRB_RENDER_SIZE.Width * 0.5f, BIRB_RENDER_SIZE.Height * 0.5f);
+			var mat = Matrix3x2.CreateScale(new Vector2(BIRB_RENDER_SIZE.Width / _birbCollisionMaskSize.width, BIRB_RENDER_SIZE.Height / _birbCollisionMaskSize.height));
+			mat *= Matrix3x2.CreateRotation(_birb.Rotation * (float)(Math.PI / 180f), renderSzHalf);
+			mat *= Matrix3x2.CreateTranslation(new Vector2(_birb.Position.x - renderSzHalf.X, _birb.Position.y - renderSzHalf.Y));
 
-			var data = mask.LockBits(new Rectangle(0, 0, src.Width, src.Height), ImageLockMode.ReadWrite, src.PixelFormat);
-			const int maskVal = 1;
-			byte* pixels = (byte*)data.Scan0;
-
-			for (int x = 0; x < src.Width; x++)
+			foreach (var pnt in _birbCollisionMask)
 			{
-				for (int y = 0; y < src.Height; y++)
-				{
-					int pidx = (y * src.Width + x) * 4;
-
-					if (pixels[pidx + 3] > 0)
-					{
-						pixels[pidx] = maskVal;
-						pixels[pidx + 1] = maskVal;
-						pixels[pidx + 2] = maskVal;
-						pixels[pidx + 3] = 255;
-					}
-				}
+				var transPnt = Vector2.Transform(pnt, mat);
+				_gfx.FillRectangle(new D2DPoint(transPnt.X, transPnt.Y), new D2DSize(1f, 1f), D2DColor.Red);
 			}
-
-			mask.UnlockBits(data);
-
-			return mask;
 		}
 
 		private void BirbImpact(D2DRect clipRect)
@@ -296,15 +283,13 @@ namespace Flappy
 
 		private void DoCollisions()
 		{
-			var mask = GetCollisionMask();
-
 			if (_birb.Position.y >= this.Height - GROUND_HEIGHT - 20)
 			{
 				var colRect = new D2DRect(0, this.Height - GROUND_HEIGHT, this.Width, this.Height);
 
 				if (_birb.IsColliding(colRect))
 				{
-					if (PerPixelCollision(mask, colRect))
+					if (PerPixelCollision(colRect))
 					{
 						BirbImpact(colRect);
 						return;
@@ -326,7 +311,7 @@ namespace Flappy
 					{
 						if (_birb.IsColliding(rect))
 						{
-							if (PerPixelCollision(mask, rect))
+							if (PerPixelCollision(rect))
 							{
 								BirbImpact(rect);
 								return;
