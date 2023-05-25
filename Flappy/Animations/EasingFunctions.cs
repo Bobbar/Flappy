@@ -13,6 +13,12 @@ namespace Flappy.Animations
 			return 1f + ((k -= 1f) * (float)Math.Pow(k, 4));
 		}
 
+		public static float EaseQuinticIn(float k)
+		{
+			return k * k * k * k * k;
+		}
+
+
 		public static float EaseOutElastic(float k)
 		{
 			const float c4 = (2f * (float)Math.PI) / 3f;

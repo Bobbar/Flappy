@@ -17,6 +17,21 @@ namespace Flappy.Renderables
         private long _lastFrameTicks = 0;
 		private const float COL_RADIUS = 20f;
         private D2DBitmap[] _sprites;
+		private int _currentFrame = 0;
+
+		public bool Animate = true;
+		public int Frame
+		{
+			get { return _currentFrame; }
+
+			set
+			{
+				if (value >= 0 && value < _sprites.Length)
+				{
+					_currentFrame = value;
+				}
+			}
+		}
 
         public Birb(D2DPoint position, D2DBitmap[] sprites, Size renderSize) : base(position)
         {
@@ -30,19 +45,21 @@ namespace Flappy.Renderables
 
             gfx.RotateTransform(Rotation, Position);
 
-            if (_lastFrameTicks == 0)
-                _lastFrameTicks = DateTime.Now.Ticks;
+			if (Animate)
+			{
+				if (_lastFrameTicks == 0)
+					_lastFrameTicks = DateTime.Now.Ticks;
 
-            var elap = (DateTime.Now.Ticks - _lastFrameTicks) / TimeSpan.TicksPerMillisecond;
-            int frame = (int)Math.Floor(elap / (float)(MS_PER_LOOP / _sprites.Length));
+				var elap = (DateTime.Now.Ticks - _lastFrameTicks) / TimeSpan.TicksPerMillisecond;
+				_currentFrame = (int)Math.Floor(elap / (float)(MS_PER_LOOP / _sprites.Length));
+				_currentFrame = Math.Min(_currentFrame, _sprites.Length - 1);
 
-            frame = Math.Min(frame, _sprites.Length - 1);
+				if (elap >= MS_PER_LOOP)
+					_lastFrameTicks = DateTime.Now.Ticks;
+			}
 
-            if (elap >= MS_PER_LOOP)
-                _lastFrameTicks = DateTime.Now.Ticks;
-
-            _destRect.Location = Position.Subtract(new D2DPoint(_destRect.Width * 0.5f, _destRect.Height * 0.5f));
-			gfx.DrawBitmap(_sprites[frame], _destRect, _srcRect, 1f, D2DBitmapInterpolationMode.NearestNeighbor);
+			_destRect.Location = Position.Subtract(new D2DPoint(_destRect.Width * 0.5f, _destRect.Height * 0.5f));
+			gfx.DrawBitmap(_sprites[_currentFrame], _destRect, _srcRect, Opacity, D2DBitmapInterpolationMode.NearestNeighbor);
 
 			gfx.PopTransform();
         }
