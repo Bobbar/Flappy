@@ -10,11 +10,19 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="unvell.D2DLib-x64" Version="1.4.1" />
+    <Reference Include="d2dlibexport">
+      <HintPath>..\..\..\Downloads\d2dlib-master\d2dlib-master\src\D2DLibExport\bin\x64\Release\netstandard2.0\d2dlibexport.dll</HintPath>
+    </Reference>
+    <Reference Include="d2dwinform">
+      <HintPath>..\..\..\Downloads\d2dlib-master\d2dlib-master\src\D2DWinForm\bin\x64\Release\netcoreapp3.1\d2dwinform.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
     <None Update="birb_sprite.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="d2dlib64.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Sprites\base.png">
@@ -44,6 +52,8 @@
     <None Update="Sprites\yellowbird-upflap.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+
+    <using Include="System.Numerics.Vector2" Alias="D2DPoint" />
   </ItemGroup>
 
 </Project>

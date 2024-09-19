@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Flappy.Renderables;
+﻿using Flappy.Renderables;
 
 namespace Flappy.Animations
 {
@@ -55,7 +49,7 @@ namespace Flappy.Animations
                 _startTicks = DateTime.Now.Ticks;
             }
 
-            var elap = (DateTime.Now.Ticks - _startTicks) / TimeSpan.TicksPerMillisecond;
+            var elap = (DateTime.Now.Ticks - _startTicks) / (float)TimeSpan.TicksPerMillisecond;
             _position = elap / _duration;
 
             if (elap < _duration)
